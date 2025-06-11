@@ -7,14 +7,17 @@
     h2 { color: #333; }
     a { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
     a:hover { background: #218838; }
+    /* ซ่อนช่องใน Google Form (ใช้ CSS เพื่อซ่อน iframe ถ้าจำเป็น) */
+    #formFrame { display: none; }
   </style>
   <script>
     const centerLat = 13.7563; // กรุงเทพฯ
     const centerLong = 100.5018;
     const maxDistance = 200;
-    const formUrl = "https://forms.gle/v5FuNUCejRNB3y5j8";
-    const latEntryId = "entry.1781601731"; // Latitude
-    const longEntryId = "entry.1636660597"; // Longitude
+    const formUrl = "https://forms.gle/HXT51TGYCXEGT72w9";
+    const latEntryId = "entry.1781601731"; // Entry ID ของ Latitude
+    const longEntryId = "entry.1636660597"; // Entry ID ของ Longitude
+    const passEntryId = "entry.XXXXXX"; // Entry ID ของรหัสผ่าน (ถ้ามี)
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
@@ -33,22 +36,33 @@
           function(position) {
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
-            console.log("Latitude:", userLat, "Longitude:", userLong); // ดีบัก
+            console.log("Latitude:", userLat, "Longitude:", userLong);
             const distance = calculateDistance(userLat, userLong, centerLat, centerLong);
-            console.log("Distance:", distance, "km"); // ดีบัก
+            console.log("Distance:", distance, "km");
             if (distance > maxDistance) {
               alert("คุณอยู่นอกรัศมี 200 กม.");
               document.getElementById("message").innerText = "ไม่สามารถลงคิวได้";
             } else {
-              const url = `${formUrl}?${latEntryId}=${encodeURIComponent(userLat)}&${longEntryId}=${encodeURIComponent(userLong)}`;
-              console.log("Generated URL:", url); // ดีบัก
-              document.getElementById("formLink").href = url;
-              document.getElementById("formLink").style.display = "block";
-              document.getElementById("message").innerText = `อยู่ในรัศมี (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+              let url = `${formUrl}?${latEntryId}=${encodeURIComponent(userLat)}&${longEntryId}=${encodeURIComponent(userLong)}`;
+              if (passEntryId) {
+                url += `&${passEntryId}=${encodeURIComponent("UET2025")}`; // รหัสผ่านถ้ามี
+              }
+              console.log("Generated URL:", url);
+              // ใช้ iframe เพื่อแสดงฟอร์มและซ่อนช่อง
+              const frame = document.createElement("iframe");
+              frame.id = "formFrame";
+              frame.src = url;
+              frame.style.width = "100%";
+              frame.style.height = "600px";
+              frame.style.border = "none";
+              document.body.appendChild(frame);
+              document.getElementById("message").innerText = `อยู่ในรัศมี (Lat: ${userLat}, Long: ${userLong}) กรุณากรอกข้อมูล`;
+              // ซ่อนลิงก์เดิม
+              document.getElementById("formLink").style.display = "none";
             }
           },
           function(error) {
-            console.error("Geolocation error:", error.message); // ดีบัก
+            console.error("Geolocation error:", error.message);
             alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
             document.getElementById("message").innerText = "กรุณาเปิด GPS และลองใหม่";
           }
