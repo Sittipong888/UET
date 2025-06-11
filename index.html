@@ -2,13 +2,19 @@
 <html>
 <head>
   <title>ตรวจสอบพิกัดสำหรับลงคิวรถ</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    h2 { color: #333; }
+    a { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+    a:hover { background: #218838; }
+  </style>
   <script>
     const centerLat = 13.7563; // กรุงเทพฯ
     const centerLong = 100.5018;
-    const maxDistance = 500;
-    const formUrl = "https://forms.gle/f75Qo8KGrs3d5eQK6"; // URL ของ Google Form
-    const latEntryId = "entry.1781601731"; // Entry ID ของ Latitude
-    const longEntryId = "entry.1636660597"; // Entry ID ของ Longitude
+    const maxDistance = 200;
+    const formUrl = "https://forms.gle/v5FuNUCejRNB3y5j8";
+    const latEntryId = "entry.1781601731"; // Latitude
+    const longEntryId = "entry.1636660597"; // Longitude
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
@@ -27,20 +33,24 @@
           function(position) {
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
+            console.log("Latitude:", userLat, "Longitude:", userLong); // ดีบัก
             const distance = calculateDistance(userLat, userLong, centerLat, centerLong);
+            console.log("Distance:", distance, "km"); // ดีบัก
             if (distance > maxDistance) {
-              alert("คุณอยู่นอกรัศมี 500 กม.");
+              alert("คุณอยู่นอกรัศมี 200 กม.");
               document.getElementById("message").innerText = "ไม่สามารถลงคิวได้";
             } else {
-              const url = `${formUrl}?${latEntryId}=${userLat}&${longEntryId}=${userLong}`;
+              const url = `${formUrl}?${latEntryId}=${encodeURIComponent(userLat)}&${longEntryId}=${encodeURIComponent(userLong)}`;
+              console.log("Generated URL:", url); // ดีบัก
               document.getElementById("formLink").href = url;
               document.getElementById("formLink").style.display = "block";
-              document.getElementById("message").innerText = "อยู่ในรัศมี คลิกเพื่อลงคิว";
+              document.getElementById("message").innerText = `อยู่ในรัศมี (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
             }
           },
           function(error) {
+            console.error("Geolocation error:", error.message); // ดีบัก
             alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
-            document.getElementById("message").innerText = "กรุณาเปิด GPS";
+            document.getElementById("message").innerText = "กรุณาเปิด GPS และลองใหม่";
           }
         );
       } else {
