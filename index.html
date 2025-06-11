@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ตรวจสอบพิกัดสำหรับลงคิวรถ</title>
+  <script>
+    const centerLat = 13.7563; // กรุงเทพฯ
+    const centerLong = 100.5018;
+    const maxDistance = 500;
+    const formUrl = "https://forms.gle/f75Qo8KGrs3d5eQK6"; // URL ของ Google Form
+    const latEntryId = "entry.1781601731"; // Entry ID ของ Latitude
+    const longEntryId = "entry.1636660597"; // Entry ID ของ Longitude
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const userLat = position.coords.latitude;
+            const userLong = position.coords.longitude;
+            const distance = calculateDistance(userLat, userLong, centerLat, centerLong);
+            if (distance > maxDistance) {
+              alert("คุณอยู่นอกรัศมี 500 กม.");
+              document.getElementById("message").innerText = "ไม่สามารถลงคิวได้";
+            } else {
+              const url = `${formUrl}?${latEntryId}=${userLat}&${longEntryId}=${userLong}`;
+              document.getElementById("formLink").href = url;
+              document.getElementById("formLink").style.display = "block";
+              document.getElementById("message").innerText = "อยู่ในรัศมี คลิกเพื่อลงคิว";
+            }
+          },
+          function(error) {
+            alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
+            document.getElementById("message").innerText = "กรุณาเปิด GPS";
+          }
+        );
+      } else {
+        alert("เบราว์เซอร์ไม่รองรับ Geolocation");
+        document.getElementById("message").innerText = "เบราว์เซอร์ไม่รองรับ";
+      }
+    }
+  </script>
+</head>
+<body onload="getLocation()">
+  <h2>ลงคิวรถ</h2>
+  <p id="message">กรุณารอขณะตรวจสอบพิกัด...</p>
+  <a id="formLink" href="#" style="display:none;">ไปที่ฟอร์มลงคิวรถ</a>
+</body>
+</html>
