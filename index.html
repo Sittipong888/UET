@@ -1,60 +1,81 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="th">
 <head>
-  <title>ลงคิวรถสำหรับพขร.</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ลงคิวรถ Universal Express Transport</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    h2 { color: #333; }
-    select, button { padding: 10px; margin: 5px; }
-    a { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
-    a:hover { background: #218838; }
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #e0f7fa, #ffffff);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .header {
+      margin-bottom: 20px;
+    }
+    .logo {
+      max-width: 200px;
+      opacity: 1.0; /* ลดความคมชัด */
+      filter: blur(0px);
+    }
+    h1 {
+      font-size: 1.5em;
+      color: #2c3e50;
+      margin: 10px 0;
+    }
+    p {
+      font-size: 1.2em;
+      color: #7f8c8d;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    select, button {
+      padding: 12px;
+      margin: 10px;
+      font-size: 1em;
+      border: 1px solid #3498db;
+      border-radius: 5px;
+      background: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3498db;
+      color: white;
+    }
+    a {
+      display: inline-block;
+      padding: 12px 25px;
+      background: #2ecc71;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 15px;
+    }
+    a:hover {
+      background: #27ae60;
+    }
+    #message {
+      margin: 10px 0;
+      font-weight: bold;
+    }
   </style>
   <script>
-    const rayongLat = 12.6802; // พิกัดระยอง
-    const rayongLong = 101.2815;
-    const saraburiLat = 14.5333; // พิกัดสระบุรี
-    const saraburiLong = 100.9167;
-    const maxDistance = 250;
-    const formUrl = "https://forms.gle/szWmqssvquzBak8u5"; // ใส่ URL ฟอร์มจริงที่นี่
+    const rayongLat = 12.96980463108979; // พิกัดระยอง (ใหม่)
+    const rayongLong = 101.1129185324132;
+    const saraburiLat = 14.390552298546279; // พิกัดสระบุรี (ใหม่)
+    const saraburiLong = 100.89930615784056;
+    const rayongMaxDistance = 160; // ระยะห่างสำหรับระยอง
+    const saraburiMaxDistance = 180; // ระยะห่างสำหรับสระบุรี
+    const formUrl = "https://forms.gle/YourFormURLHere"; // ใส่ URL ฟอร์มจริงที่นี่
     const nameEntryId = "entry.123456789"; // เปลี่ยนตาม ID ช่องชื่อ-นามสกุล
     const regEntryId = "entry.987654321"; // เปลี่ยนตาม ID ช่องทะเบียน
     const lastJobEntryId = "entry.111222333"; // เปลี่ยนตาม ID ช่องงานล่าสุด
@@ -77,24 +98,30 @@
           function(position) {
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
-            let centerLat, centerLong;
+            let centerLat, centerLong, maxDistance;
             if (location === "rayong") {
               centerLat = rayongLat;
               centerLong = rayongLong;
+              maxDistance = rayongMaxDistance;
             } else if (location === "saraburi") {
               centerLat = saraburiLat;
               centerLong = saraburiLong;
+              maxDistance = saraburiMaxDistance;
+            } else {
+              document.getElementById("message").innerText = "กรุณาเลือกจุดลงคิว";
+              document.getElementById("formLink").style.display = "none";
+              return;
             }
             const distance = calculateDistance(userLat, userLong, centerLat, centerLong);
             if (distance > maxDistance) {
-              alert("คุณอยู่นอกรัศมี 250 กม. จาก " + location);
+              alert("คุณอยู่นอกรัศมี " + maxDistance + " กม. จาก " + location);
               document.getElementById("formLink").style.display = "none";
               document.getElementById("message").innerText = "ไม่สามารถลงคิวได้";
             } else {
               const url = `${formUrl}?${nameEntryId}=&${regEntryId}=&${lastJobEntryId}=`;
               document.getElementById("formLink").href = url;
               document.getElementById("formLink").style.display = "block";
-              document.getElementById("message").innerText = `อยู่ในรัศมี 250 กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+              document.getElementById("message").innerText = `อยู่ในรัศมี ${maxDistance} กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
             }
           },
           function(error) {
@@ -110,13 +137,19 @@
   </script>
 </head>
 <body>
-  <h2>ลงคิวรถสำหรับพขร.</h2>
-  <select id="location" onchange="checkLocation()">
-    <option value="">เลือกสถานที่</option>
-    <option value="rayong">ระยอง</option>
-    <option value="saraburi">สระบุรี</option>
-  </select>
-  <p id="message">กรุณาเลือกสถานที่และรอขณะตรวจสอบพิกัด...</p>
-  <a id="formLink" href="#" style="display:none;">ไปที่ฟอร์มลงคิวรถ</a>
+  <div class="header">
+    <img src="https://img2.pic.in.th/pic/296b846e72b8fc9af.png" alt="Universal Express Transport Logo" class="logo">
+    <h1>ลงคิวรถ Universal Express Transport</h1>
+    <p>ระบบลงคิวสำหรับพนักงานขับรถ</p>
+  </div>
+  <div class="container">
+    <select id="location" onchange="checkLocation()">
+      <option value="">เลือกจุดลงคิว</option>
+      <option value="rayong">ระยอง</option>
+      <option value="saraburi">สระบุรี</option>
+    </select>
+    <p id="message">กรุณาเลือกจุดลงคิวและรอขณะตรวจสอบพิกัด ระยะไม่เกินจากรัศมี ...</p>
+    <a id="formLink" href="#" style="display:none;">ไปที่ฟอร์มลงคิวรถ</a>
+  </div>
 </body>
 </html>
