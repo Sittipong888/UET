@@ -1,56 +1,122 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>จัดการลงคิวรถ</title>
-</head>
-<body>
-  <h1>ลงทะเบียนคิวรถ</h1>
-  <p>กำลังตรวจสอบตำแหน่งของคุณ...</p>
-  <p id="message"></p>
-  <script>
-    // พิกัดกรุงเทพฯ
-    const bangkokLat = 13.7563;
-    const bangkokLong = 100.5018;
-    const maxDistance = 200; // 200 กม.
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
 
-    // สูตร Haversine เพื่อคำนวณระยะห่าง
-    function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371; // รัศมีโลกในหน่วยกม.
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html>
+<head>
+  <title>ลงคิวรถสำหรับพขร.</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    h2 { color: #333; }
+    select, button { padding: 10px; margin: 5px; }
+    a { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+    a:hover { background: #218838; }
+  </style>
+  <script>
+    const rayongLat = 12.6802; // พิกัดระยอง
+    const rayongLong = 101.2815;
+    const saraburiLat = 14.5333; // พิกัดสระบุรี
+    const saraburiLong = 100.9167;
+    const maxDistance = 250;
+    const formUrl = "https://forms.gle/szWmqssvquzBak8u5"; // ใส่ URL ฟอร์มจริงที่นี่
+    const nameEntryId = "entry.123456789"; // เปลี่ยนตาม ID ช่องชื่อ-นามสกุล
+    const regEntryId = "entry.987654321"; // เปลี่ยนตาม ID ช่องทะเบียน
+    const lastJobEntryId = "entry.111222333"; // เปลี่ยนตาม ID ช่องงานล่าสุด
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
 
-    // รับตำแหน่งผู้ใช้
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLat = position.coords.latitude;
-          const userLong = position.coords.longitude;
-          const distance = getDistance(userLat, userLong, bangkokLat, bangkokLong);
-          const message = document.getElementById('message');
-          
-          if (distance <= maxDistance) {
-            // แทนที่ด้วย URL ของ Google Form และ ID ฟิลด์
-            const formUrl = `https://docs.google.com/forms/d/e/1FAIpQLSdaqw0EGWNSwy9gd74SMQJhJBTjniIJBRp1ZmweJmwiVExZ_w/viewform?entry.464149423=13.7563,100.5018`;
-            message.innerHTML = `คุณอยู่ในระยะ 200 กม. จากกรุงเทพฯ <a href="${formUrl}">คลิกที่นี่เพื่อเข้าถึงฟอร์ม</a>`;
-          } else {
-            message.textContent = 'คุณอยู่นอกรัศมี 200 กม. จากกรุงเทพฯ';
+    function checkLocation() {
+      const location = document.getElementById("location").value;
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const userLat = position.coords.latitude;
+            const userLong = position.coords.longitude;
+            let centerLat, centerLong;
+            if (location === "rayong") {
+              centerLat = rayongLat;
+              centerLong = rayongLong;
+            } else if (location === "saraburi") {
+              centerLat = saraburiLat;
+              centerLong = saraburiLong;
+            }
+            const distance = calculateDistance(userLat, userLong, centerLat, centerLong);
+            if (distance > maxDistance) {
+              alert("คุณอยู่นอกรัศมี 250 กม. จาก " + location);
+              document.getElementById("formLink").style.display = "none";
+              document.getElementById("message").innerText = "ไม่สามารถลงคิวได้";
+            } else {
+              const url = `${formUrl}?${nameEntryId}=&${regEntryId}=&${lastJobEntryId}=`;
+              document.getElementById("formLink").href = url;
+              document.getElementById("formLink").style.display = "block";
+              document.getElementById("message").innerText = `อยู่ในรัศมี 250 กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+            }
+          },
+          function(error) {
+            alert("ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS");
+            document.getElementById("message").innerText = "กรุณาเปิด GPS และลองใหม่";
           }
-        },
-        (error) => {
-          document.getElementById('message').textContent = 'ไม่สามารถรับตำแหน่งของคุณได้ กรุณาอนุญาตการเข้าถึงตำแหน่ง';
-        }
-      );
-    } else {
-      document.getElementById('message').textContent = 'เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง';
+        );
+      } else {
+        alert("เบราว์เซอร์ไม่รองรับ Geolocation");
+        document.getElementById("message").innerText = "เบราว์เซอร์ไม่รองรับ";
+      }
     }
   </script>
+</head>
+<body>
+  <h2>ลงคิวรถสำหรับพขร.</h2>
+  <select id="location" onchange="checkLocation()">
+    <option value="">เลือกสถานที่</option>
+    <option value="rayong">ระยอง</option>
+    <option value="saraburi">สระบุรี</option>
+  </select>
+  <p id="message">กรุณาเลือกสถานที่และรอขณะตรวจสอบพิกัด...</p>
+  <a id="formLink" href="#" style="display:none;">ไปที่ฟอร์มลงคิวรถ</a>
 </body>
 </html>
