@@ -69,12 +69,13 @@
     }
   </style>
   <script>
-    const rayongLat = 12.96980463108979; // พิกัดระยอง (ใหม่)
+    const rayongLat = 12.96980463108979; // พิกัดระยอง
     const rayongLong = 101.1129185324132;
-    const saraburiLat = 14.390552298546279; // พิกัดสระบุรี (ใหม่)
+    const saraburiLat = 14.390552298546279; // พิกัดสระบุรี
     const saraburiLong = 100.89930615784056;
-    const rayongMaxDistance = 160; // ระยะห่างสำหรับระยอง
-    const saraburiMaxDistance = 180; // ระยะห่างสำหรับสระบุรี
+    const rayongMaxDistance = 180; // ระยะห่างสำหรับระยอง
+    const saraburiMaxDistance = 50; // ระยะห่างสำหรับสระบุรี
+    const moveSingleMaxDistance = 180; // ระยะห่างสำหรับงานย้ายขาเดียว
     const formUrl = "https://forms.gle/YourFormURLHere"; // ใส่ URL ฟอร์มจริงที่นี่
     const nameEntryId = "entry.123456789"; // เปลี่ยนตาม ID ช่องชื่อ-นามสกุล
     const regEntryId = "entry.987654321"; // เปลี่ยนตาม ID ช่องทะเบียน
@@ -107,6 +108,10 @@
               centerLat = saraburiLat;
               centerLong = saraburiLong;
               maxDistance = saraburiMaxDistance;
+            } else if (location === "move_single") {
+              centerLat = saraburiLat; // ใช้พิกัดเดียวกับสระบุรี
+              centerLong = saraburiLong;
+              maxDistance = moveSingleMaxDistance;
             } else {
               document.getElementById("message").innerText = "กรุณาเลือกจุดลงคิว";
               document.getElementById("formLink").style.display = "none";
@@ -145,8 +150,9 @@
   <div class="container">
     <select id="location" onchange="checkLocation()">
       <option value="">เลือกจุดลงคิว</option>
-      <option value="rayong">ระยอง</option>
-      <option value="saraburi">สระบุรี</option>
+      <option value="rayong">ระยอง (ห่าง 200 กม.)</option>
+      <option value="saraburi">สระบุรี (ห่าง 50 กม.)</option>
+      <option value="move_single">งานย้ายขาเดียว (ห่าง 255 กม.)</option>
     </select>
     <p id="message">กรุณาเลือกจุดลงคิวและรอขณะตรวจสอบพิกัด ระยะไม่เกินจากรัศมี ...</p>
     <a id="formLink" href="#" style="display:none;">ไปที่ฟอร์มลงคิวรถ</a>
