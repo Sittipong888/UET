@@ -73,13 +73,14 @@
     const rayongLong = 101.1129185324132;
     const saraburiLat = 14.390552298546279; // พิกัดสระบุรี
     const saraburiLong = 100.89930615784056;
-    const rayongMaxDistance = 180; // ระยะห่างสำหรับระยอง
+    const rayongMaxDistance = 160; // ระยะห่างสำหรับระยอง
     const saraburiMaxDistance = 50; // ระยะห่างสำหรับสระบุรี
     const moveSingleMaxDistance = 180; // ระยะห่างสำหรับงานย้ายขาเดียว
-    const formUrl = "https://forms.gle/YourFormURLHere"; // ใส่ URL ฟอร์มจริงที่นี่
+    const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSdaqw0EGWNSwy9gd74SMQJhJBTjniIJBRp1ZmweJmwiVExZ_w/viewform?usp=sharing&ouid=107693525130515987915"; // URL ฟอร์มจริง
     const nameEntryId = "entry.123456789"; // เปลี่ยนตาม ID ช่องชื่อ-นามสกุล
     const regEntryId = "entry.987654321"; // เปลี่ยนตาม ID ช่องทะเบียน
     const lastJobEntryId = "entry.111222333"; // เปลี่ยนตาม ID ช่องงานล่าสุด
+    const locationEntryId = "entry.XXXXXX"; // เปลี่ยนตาม ID ช่อง "ลงคิวที่ไหน" (ตรวจสอบจาก Google Form)
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
@@ -99,19 +100,25 @@
           function(position) {
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
-            let centerLat, centerLong, maxDistance;
+            let centerLat, centerLong, maxDistance, messageText, locationParam = "";
             if (location === "rayong") {
               centerLat = rayongLat;
               centerLong = rayongLong;
               maxDistance = rayongMaxDistance;
+              messageText = `อยู่ในรัศมี 200 กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+              locationParam = "&entry.1261874857=ระยอง"; // ล็อคเลือก "ระยอง" ในฟอร์ม
             } else if (location === "saraburi") {
               centerLat = saraburiLat;
               centerLong = saraburiLong;
               maxDistance = saraburiMaxDistance;
+              messageText = `อยู่ในรัศมี 50 กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+              locationParam = "&entry.1261874857=สระบุรี"; // ล็อคเลือก "สระบุรี" ในฟอร์ม
             } else if (location === "move_single") {
               centerLat = saraburiLat; // ใช้พิกัดเดียวกับสระบุรี
               centerLong = saraburiLong;
               maxDistance = moveSingleMaxDistance;
+              messageText = `อยู่ในรัศมี 255 กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+              // ไม่ล็อค "ลงคิวที่ไหน" สำหรับ move_single
             } else {
               document.getElementById("message").innerText = "กรุณาเลือกจุดลงคิว";
               document.getElementById("formLink").style.display = "none";
@@ -123,10 +130,10 @@
               document.getElementById("formLink").style.display = "none";
               document.getElementById("message").innerText = "ไม่สามารถลงคิวได้";
             } else {
-              const url = `${formUrl}?${nameEntryId}=&${regEntryId}=&${lastJobEntryId}=`;
+              const url = `${formUrl}?${nameEntryId}=&${regEntryId}=&${lastJobEntryId}=${locationParam}`;
               document.getElementById("formLink").href = url;
               document.getElementById("formLink").style.display = "block";
-              document.getElementById("message").innerText = `อยู่ในรัศมี ${maxDistance} กม. (Lat: ${userLat}, Long: ${userLong}) คลิกเพื่อลงคิว`;
+              document.getElementById("message").innerText = messageText;
             }
           },
           function(error) {
@@ -152,7 +159,7 @@
       <option value="">เลือกจุดลงคิว</option>
       <option value="rayong">ระยอง (ห่าง 200 กม.)</option>
       <option value="saraburi">สระบุรี (ห่าง 50 กม.)</option>
-      <option value="move_single">งานย้ายขาเดียว (ห่าง 255 กม.)</option>
+      <option value="move_single">สำหรับพขร.ที่ขึ้นงานย้ายเสร็จแล้ว (ระยะห่างระยอง-สระบุรี)</option>
     </select>
     <p id="message">กรุณาเลือกจุดลงคิวและรอขณะตรวจสอบพิกัด ระยะไม่เกินจากรัศมี ...</p>
     <a id="formLink" href="#" style="display:none;">ไปที่ฟอร์มลงคิวรถ</a>
